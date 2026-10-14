@@ -1,141 +1,157 @@
+
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MeuApp());
+  runApp(const MyApp());
 }
 
-class MeuApp extends StatelessWidget {
-  const MeuApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const TelaViagem(),
+      home: Calculadora(),
     );
   }
 }
 
-class TelaViagem extends StatefulWidget {
-  const TelaViagem({super.key});
+class Calculadora extends StatefulWidget {
+  const Calculadora({super.key});
 
   @override
-  State<TelaViagem> createState() => _TelaViagemState();
+  State<Calculadora> createState() => _CalculadoraState();
 }
 
-class _TelaViagemState extends State<TelaViagem> {
-  final distanciaController = TextEditingController();
-  final precoController = TextEditingController();
-  final consumoController = TextEditingController();
-  final velocidadeController = TextEditingController();
+class _CalculadoraState extends State<Calculadora> {
+  String pantalla = '0';
+  double primerNumero = 0;
+  String operacion = '';
+  bool nuevoNumero = true;
 
-  String resultadoCusto = '';
-  String resultadoTempo = '';
+  void presionar(String valor) {
+    setState(() {
+      if (valor == 'C') {
+        pantalla = '0';
+        primerNumero = 0;
+        operacion = '';
+        nuevoNumero = true;
+      } else if (valor == '+' ||
+          valor == '-' ||
+          valor == '×' ||
+          valor == '÷') {
+        primerNumero = double.tryParse(pantalla) ?? 0;
+        operacion = valor;
+        nuevoNumero = true;
+      } else if (valor == '=') {
+        double segundoNumero = double.tryParse(pantalla) ?? 0;
+        double resultado = 0;
 
-  void calcularCusto() {
-    double distancia =
-        double.tryParse(distanciaController.text.replaceAll(',', '.')) ?? 0;
+        switch (operacion) {
+          case '+':
+            resultado = primerNumero + segundoNumero;
+            break;
+          case '-':
+            resultado = primerNumero - segundoNumero;
+            break;
+          case '×':
+            resultado = primerNumero * segundoNumero;
+            break;
+          case '÷':
+            if (segundoNumero == 0) {
+              pantalla = 'Error';
+              operacion = '';
+              nuevoNumero = true;
+              return;
+            }
+            resultado = primerNumero / segundoNumero;
+            break;
+        }
 
-    double preco =
-        double.tryParse(precoController.text.replaceAll(',', '.')) ?? 0;
+        pantalla = resultado % 1 == 0
+            ? resultado.toInt().toString()
+            : resultado.toString();
 
-    double consumo =
-        double.tryParse(consumoController.text.replaceAll(',', '.')) ?? 0;
+        operacion = '';
+        nuevoNumero = true;
+      } else {
+        if (valor == '.' && pantalla.contains('.') && !nuevoNumero) {
+          return;
+        }
 
-    if (distancia > 0 && preco > 0 && consumo > 0) {
-      double custo = (distancia / consumo) * preco;
-
-      setState(() {
-        resultadoCusto = 'Custo estimado: R\$ ${custo.toStringAsFixed(2)}';
-      });
-    } else {
-      setState(() {
-        resultadoCusto = 'Digite valores válidos.';
-      });
-    }
+        if (nuevoNumero || pantalla == '0' || pantalla == 'Error') {
+          pantalla = valor == '.' ? '0.' : valor;
+          nuevoNumero = false;
+        } else {
+          pantalla += valor;
+        }
+      }
+    });
   }
 
-  void calcularTempo() {
-    double distancia =
-        double.tryParse(distanciaController.text.replaceAll(',', '.')) ?? 0;
-
-    double velocidade =
-        double.tryParse(velocidadeController.text.replaceAll(',', '.')) ?? 0;
-
-    if (distancia > 0 && velocidade > 0) {
-      double tempo = distancia / velocidade;
-
-      setState(() {
-        resultadoTempo = 'Tempo estimado: ${tempo.toStringAsFixed(2)} horas';
-      });
-    } else {
-      setState(() {
-        resultadoTempo = 'Digite valores válidos.';
-      });
-    }
+  Widget boton(String texto) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: ElevatedButton(
+          onPressed: () => presionar(texto),
+          child: Text(
+            texto,
+            style: const TextStyle(fontSize: 24),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calculadora de Viagem'),
+        title: const Text('Calculadora'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: distanciaController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Distância (km)',
-              ),
+      body: Column(
+        children: [
+          Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            child: Text(
+              pantalla,
+              style: const TextStyle(fontSize: 40),
             ),
-
-            TextField(
-              controller: precoController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Preço do combustível (R\$/L)',
-              ),
-            ),
-
-            TextField(
-              controller: consumoController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Consumo do veículo (km/L)',
-              ),
-            ),
-
-            TextField(
-              controller: velocidadeController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Velocidade média (km/h)',
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: calcularCusto,
-              child: const Text('Calcular Custo'),
-            ),
-
-            Text(resultadoCusto),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: calcularTempo,
-              child: const Text('Calcular Tempo'),
-            ),
-
-            Text(resultadoTempo),
-          ],
-        ),
+          ),
+          const Spacer(),
+          Row(children: [
+            boton('7'),
+            boton('8'),
+            boton('9'),
+            boton('÷'),
+          ]),
+          Row(children: [
+            boton('4'),
+            boton('5'),
+            boton('6'),
+            boton('×'),
+          ]),
+          Row(children: [
+            boton('1'),
+            boton('2'),
+            boton('3'),
+            boton('-'),
+          ]),
+          Row(children: [
+            boton('C'),
+            boton('0'),
+            boton('.'),
+            boton('+'),
+          ]),
+          Row(children: [
+            boton('='),
+          ]),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }
